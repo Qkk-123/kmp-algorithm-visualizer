@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>KMP · 代码逐行执行可视化</title>
+<title>串模式匹配 · KMP 与 Sunday 代码逐行可视化</title>
 <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource-variable/space-grotesk@5.2.10/index.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/zcool-qingke-huangyou@5.2.8/index.css">
@@ -251,14 +251,15 @@ footer{margin-top:64px;padding-top:22px;border-top:1px solid var(--line-soft);co
 <div class="wrap">
 
   <header class="top rv">
-    <div class="topline"><span class="pulse"></span>数据结构 · 串 · 模式匹配 / KMP</div>
-    <h1>把 KMP 代码<br><span class="g">一行一行跑给你看</span></h1>
-    <p class="sub">左边是高亮的代码，右边是它每一步真正在做什么。跟着指针走一遍，你就明白 <code>GenNext</code> 和 <code>Index</code> 为什么这么写。</p>
+    <div class="topline"><span class="pulse"></span>数据结构 · 串 · 模式匹配 / KMP + Sunday</div>
+    <h1>把 KMP 和 Sunday<br><span class="g">一行一行跑给你看</span></h1>
+    <p class="sub">左边是高亮的代码，右边是它每一步真正在做什么。跟着指针走一遍，你就明白 <code>GenNext</code>、<code>Index</code> 为什么这么写，也明白 Sunday 的<code>偏移表</code>凭什么能整段往后跳。</p>
     <div class="stats">
       <div class="stat"><span class="v">O(n+m)</span><span class="k">匹配复杂度</span></div>
       <div class="stat"><span class="v">−1</span><span class="k">哨兵 next[0]</span></div>
       <div class="stat"><span class="v">i 不回退</span><span class="k">核心思想</span></div>
       <div class="stat"><span class="v">ababacac</span><span class="k">示例模式串</span></div>
+      <div class="stat"><span class="v">shift[c]</span><span class="k">Sunday 偏移表</span></div>
     </div>
   </header>
 
