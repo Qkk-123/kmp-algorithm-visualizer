@@ -236,6 +236,13 @@ h2.sec .g{color:var(--sig);}
 .readcard code{font-family:var(--mono);font-size:12.5px;color:var(--amber);}
 
 footer{margin-top:64px;padding-top:22px;border-top:1px solid var(--line-soft);color:var(--muted-2);font-size:12.5px;font-family:var(--mono);text-align:center;letter-spacing:.03em;}
+
+  .ch.lb{outline:2px solid var(--amber);outline-offset:1px;border-radius:4px}
+  .viztable{width:100%;border-collapse:collapse;margin-top:12px;font-family:var(--mono);font-size:12.5px}
+  .viztable th,.viztable td{border:1px solid rgba(255,255,255,.13);padding:7px 10px;text-align:left;vertical-align:top}
+  .viztable th{color:var(--amber);font-weight:600;background:rgba(255,255,255,.03)}
+  .viztable td.c{text-align:center}
+  .viztable tr.hl td{background:rgba(245,158,11,.10)}
 </style>
 </head>
 <body>
@@ -264,6 +271,7 @@ footer{margin-top:64px;padding-top:22px;border-top:1px solid var(--line-soft);co
   <div class="tabs rv">
     <button class="tab on" data-mode="next">构造 next 数组 · GenNext</button>
     <button class="tab" data-mode="match">用 next 匹配主串 · Index</button>
+    <button class="tab" data-mode="sunday">偏移表跳跃 · Sunday</button>
   </div>
 
   <div class="stage">
@@ -274,7 +282,7 @@ footer{margin-top:64px;padding-top:22px;border-top:1px solid var(--line-soft);co
 
     <div class="right">
       <div class="panel rv">
-        <h3>指针与 next 数组</h3>
+        <h3 id="vizTitle">指针与 next 数组</h3>
         <div id="viz"></div>
       </div>
 
@@ -302,7 +310,54 @@ footer{margin-top:64px;padding-top:22px;border-top:1px solid var(--line-soft);co
     <div class="readcard rv"><span class="num">03</span><h4>j = next[j]</h4><p>字符对不上。别慌，i 不动，只让 j 沿着 next 往回退，退到"还有可能对上"的位置再比。这正是"利用已匹配信息、不重复比较"。</p></div>
   </div>
 
-  <footer>示例取自课件《第四章 串》：模式串 T = "ababacac"，主串 S = "ababcabcacbab"。单步结果与课本 next 表 [-1,0,0,1,2,3,0,1] 一致。</footer>
+
+  <h2 class="sec rv">Sunday 算法：<span class="g">它到底在偷懒少比什么</span></h2>
+  <p class="sub rv" style="font-size:14px;">KMP 是"失配了往前退"，Sunday 是"失配了往后跳"。一个往回看已经比过的，一个往前看还没比的——方向完全相反。</p>
+
+  <div class="readgrid">
+    <div class="readcard rv"><span class="num">01</span><h4>先忘掉 next，Sunday 只有一个表</h4><p>Sunday 不需要 next 数组，它只需要一张 <b>偏移表</b>（shift）：记录"某个字符在模式串里最后出现的位置，距离末尾还有多远"。就这一张表，别的都不要。</p></div>
+    <div class="readcard rv"><span class="num">02</span><h4>失配后，眼睛看窗口右边那一格</h4><p>假设模式串贴在 s 处、长度 m。失配后不纠结失配的那个字符，去看 <code>S[s+m]</code>——紧挨着窗口<b>右边</b>、还没参与比较的第一个字符。这是 Sunday 全部的秘密。</p></div>
+    <div class="readcard rv"><span class="num">03</span><h4>看它是不是"自己人"</h4><p>拿 <code>S[s+m]</code> 去偏移表里查：如果它是模式串里出现过的字符，就把模式串右移，让这个字符<b>刚好对齐到它在模式串里最后一次出现的位置</b>；如果它压根不在模式串里，那整个模式串连一格都不必对齐，直接跳过 m+1 格。</p></div>
+  </div>
+
+  <div class="card rv" style="margin-top:18px;">
+    <h4 style="margin:0 0 12px;font-size:15px;">偏移表怎么算：shift[c] = m − (c 在 T 中最后出现的下标)</h4>
+    <table class="viztable">
+      <thead><tr><th>字符</th><th class="c">在 T 中最后出现的下标</th><th class="c">偏移量 = m − 下标</th><th>含义</th></tr></thead>
+      <tbody>
+        <tr class="hl"><td class="c">E</td><td class="c">6</td><td class="c">7 − 6 = <b>1</b></td><td>E 在 T 中出现两次（下标 0 和 6），<b>取靠右的 6</b>，所以是 1 而不是 7。它就在窗口末尾，只敢挪 1 格</td></tr>
+        <tr><td class="c">L</td><td class="c">5</td><td class="c">7 − 5 = 2</td><td>倒数第二个</td></tr>
+        <tr><td class="c">P</td><td class="c">4</td><td class="c">7 − 4 = 3</td><td></td></tr>
+        <tr><td class="c">M</td><td class="c">3</td><td class="c">7 − 3 = 4</td><td></td></tr>
+        <tr><td class="c">A</td><td class="c">2</td><td class="c">7 − 2 = 5</td><td></td></tr>
+        <tr><td class="c">X</td><td class="c">1</td><td class="c">7 − 1 = 6</td><td>最靠左的字符，跳得最远</td></tr>
+        <tr><td class="c">其他所有字符</td><td class="c">—</td><td class="c">m + 1 = 8</td><td>根本不在模式串里，整段跳过</td></tr>
+      </tbody>
+    </table>
+    <p style="margin:12px 0 0;font-size:13px;color:var(--muted);">关键点：同一个字符出现多次，<b>永远取最后（最右）一次的下标</b>。取越右的位置，偏移越小、跳得越保守、越不容易漏掉匹配——这是"安全"的保证。</p>
+  </div>
+
+  <div class="card rv" style="margin-top:18px;">
+    <h4 style="margin:0 0 12px;font-size:15px;">完整走一遍：S = "HERE IS A SIMPLE EXAMPLE"，T = "EXAMPLE"</h4>
+    <table class="viztable">
+      <thead><tr><th class="c">轮次</th><th class="c">s</th><th>第一处失配</th><th class="c">S[s+m]</th><th class="c">偏移</th><th class="c">新 s</th><th>这一轮比了几个字符</th></tr></thead>
+      <tbody>
+        <tr><td class="c">1</td><td class="c">0</td><td>S[0]='H' ≠ T[0]='E'</td><td class="c">S[7]=' '</td><td class="c">8</td><td class="c">8</td><td>1 个就失配，直接跳到 8</td></tr>
+        <tr><td class="c">2</td><td class="c">8</td><td>S[8]='A' ≠ T[0]='E'</td><td class="c">S[15]='E'</td><td class="c">1</td><td class="c">9</td><td>1 个失配，E 只能挪 1 格</td></tr>
+        <tr><td class="c">3</td><td class="c">9</td><td>S[9]=' ' ≠ T[0]='E'</td><td class="c">S[16]=' '</td><td class="c">8</td><td class="c">17</td><td>空格不在表里，一口气跳 8 格</td></tr>
+        <tr class="hl"><td class="c">4</td><td class="c">17</td><td>无 — 全部 7 位都对上</td><td class="c">—</td><td class="c">—</td><td class="c">返回 17</td><td>S[17..23] = "EXAMPLE" 匹配成功</td></tr>
+      </tbody>
+    </table>
+    <p style="margin:12px 0 0;font-size:13px;color:var(--muted);">总共只比了 3 轮、约 10 次字符比较就命中。朴素匹配要在这句 24 个字符里逐位尝试，一路试到第 17 位、比近百次。这个差距就是偏移表的价值。</p>
+  </div>
+
+  <div class="readgrid" style="margin-top:18px;">
+    <div class="readcard rv"><span class="num">A</span><h4>为什么跳了不会漏？</h4><p>因为跳的步长是"让 <code>S[s+m]</code> 这个字符对齐到它在模式串里最右的位置"。任何比这更小的移动，都不可能让 <code>S[s+m]</code> 和模式串中对应位置对上；既然那一格注定对不上，整段对齐就一定失败，跳过它是安全的。</p></div>
+    <div class="readcard rv"><span class="num">B</span><h4>和 KMP 的最本质区别</h4><p>KMP 利用的是"<b>已经比过</b>的前缀信息"（往回退 j）；Sunday 利用的是"<b>还没比</b>的下一个字符"（往后跳 s）。所以 KMP 最坏 O(n+m) 有保证，Sunday 平均很快但最坏 O(n·m)。课件考 KMP，工程里 Sunday 因为实现极简、平均性能好，实际用得更多。</p></div>
+    <div class="readcard rv"><span class="num">C</span><h4>最容易写错的两处</h4><p>① <code>if (s + m == n) break;</code> 必须先判——否则 <code>S[s+m]</code> 会越界读取。<br>② 偏移表初始化成 <code>m+1</code> 而不是 <code>m</code>——不在模式串里的字符要能整段跳过并再进一格。</p></div>
+  </div>
+
+  <footer>Sunday 示例：主串 S = "HERE IS A SIMPLE EXAMPLE"，模式串 T = "EXAMPLE"，匹配结果 index = 17。KMP 示例取自课件《第四章 串》：T = "ababacac"，S = "ababcabcacbab"，next 表 [-1,0,0,1,2,3,0,1]。</footer>
 </div>
 
 <script>
@@ -335,6 +390,25 @@ footer{margin-top:64px;padding-top:22px;border-top:1px solid var(--line-soft);co
     "        }",
     "    }",
     "    if (j == m) return i - m; else return -1;",
+    "}"
+  ];
+
+
+  var SUNDAY_CODE = [
+    "int Sunday(char S[], char T[]) {",
+    "    int n = strlen(S), m = strlen(T);",
+    "    int shift[256];",
+    "    for (int c = 0; c < 256; c++) shift[c] = m + 1;",
+    "    for (int k = 0; k < m; k++) shift[(unsigned char)T[k]] = m - k;",
+    "    int s = 0;",
+    "    while (s + m <= n) {",
+    "        int j = 0;",
+    "        while (j < m && S[s + j] == T[j]) j++;",
+    "        if (j == m) return s;",
+    "        if (s + m == n) break;",
+    "        s += shift[(unsigned char)S[s + m]];",
+    "    }",
+    "    return -1;",
     "}"
   ];
 
@@ -410,6 +484,10 @@ footer{margin-top:64px;padding-top:22px;border-top:1px solid var(--line-soft);co
 
   var NX = genNextSteps(T_PATTERN);
   var MATCH = matchSteps(S_TEXT, T_MATCH, genNextSteps(T_MATCH).next);
+  // Sunday 用更长的英文例句，跳跃效果更直观
+  var SUN_S = "HERE IS A SIMPLE EXAMPLE";
+  var SUN_T = "EXAMPLE";
+  var SUN = sundaySteps(SUN_S, SUN_T);
 
   var state = { mode:"next", idx:0, timer:null };
 
@@ -417,6 +495,7 @@ footer{margin-top:64px;padding-top:22px;border-top:1px solid var(--line-soft);co
     codeBox:document.getElementById("codeBox"),
     codeTitle:document.getElementById("codeTitle"),
     viz:document.getElementById("viz"),
+    vizTitle: document.getElementById("vizTitle"),
     explain:document.getElementById("explain"),
     counter:document.getElementById("counter"),
     bar:document.getElementById("bar"),
@@ -440,8 +519,8 @@ footer{margin-top:64px;padding-top:22px;border-top:1px solid var(--line-soft);co
     el.codeBox.innerHTML = out;
   }
 
-  function currentSteps(){ return state.mode === "next" ? NX.steps : MATCH; }
-  function currentCode(){ return state.mode === "next" ? GEN_NEXT : INDEX_CODE; }
+  function currentSteps(){ if(state.mode === "next") return NX.steps; if(state.mode === "sunday") return SUN.steps; return MATCH; }
+  function currentCode(){ if(state.mode === "next") return GEN_NEXT; if(state.mode === "sunday") return SUNDAY_CODE; return INDEX_CODE; }
 
   function buildNextViz(step){
     var T = T_PATTERN.split("");
@@ -549,11 +628,147 @@ footer{margin-top:64px;padding-top:22px;border-top:1px solid var(--line-soft);co
     return h;
   }
 
+
+  function sundaySteps(S, T){
+    var n = S.length, m = T.length, steps = [], shift = {};
+    for (var k = 0; k < m; k++) shift[T[k]] = m - k;
+
+    steps.push({line:1, s:0, j:0, shift:shift, phase:"init",
+      desc:"先看两个长度：主串 S 长 n = " + n + "，模式串 T 长 m = " + m + "。Sunday 全程只用一个指针 s 表示\u201c模式串当前对齐在主串的第几位\u201d，一开始 s = 0。"});
+
+    steps.push({line:3, s:0, j:0, shift:shift, phase:"table",
+      desc:"建偏移表：先把 256 个字符全部填成 m + 1 = " + (m+1) + "。含义是——如果这个字符根本没在模式串里出现过，那么整段模式串可以一口气跳过 m + 1 格，一个都不用比。"});
+
+    steps.push({line:4, s:0, j:0, shift:shift, phase:"table",
+      desc:"再给模式串里出现过的字符逐个登记偏移量 m \u2212 k（k 是它在模式串中<b>最后</b>出现的位置）。比如 T = \"" + T + "\"，a 最后出现在 3 号位，偏移就是 " + m + " \u2212 3 = " + (m-3) + "。注意：越靠右出现的字符，偏移越小、越\u201c保守\u201d。"});
+
+    var s = 0, ended = false;
+    while (s + m <= n){
+      steps.push({line:6, s:s, j:0, shift:shift, phase:"loop",
+        desc:"进入一轮比较：s + m = " + (s+m) + " \u2264 n = " + n + "，窗口还没越过末尾，可以比。模式串现在贴在主串第 " + s + " 位开始的位置。"});
+
+      var j = 0;
+      while (j < m && S[s+j] === T[j]){
+        steps.push({line:8, s:s, j:j, shift:shift, cmp:{a:S[s+j], b:T[j], eq:true},
+          desc:"比第 " + j + " 位：S[" + (s+j) + "] = '" + S[s+j] + "' 和 T[" + j + "] = '" + T[j] + "' 相等，j 往前挪一格，继续比下一位。"});
+        j++;
+      }
+
+      if (j === m){
+        steps.push({line:9, s:s, j:j, shift:shift, found:s,
+          desc:"j 走到 m = " + m + "，模式串每一位都对上了！<b>整段匹配成功，返回起始下标 s = " + s + "</b>。Sunday 结束。"});
+        return {steps:steps, shift:shift};
+      }
+
+      steps.push({line:8, s:s, j:j, shift:shift, cmp:{a:S[s+j], b:T[j], eq:false},
+        desc:"比第 " + j + " 位：S[" + (s+j) + "] = '" + S[s+j] + "' 和 T[" + j + "] = '" + T[j] + "' 不相等，这一轮对齐失败。注意 j 同时是\u201c已经匹配成功的长度\u201d。"});
+
+      if (s + m === n){
+        steps.push({line:10, s:s, j:j, shift:shift, notfound:true,
+          desc:"失配了，按套路应该看窗口右边的字符，但 s + m = " + (s+m) + " 已经等于 n = " + n + "，右边什么都没有了，后面不可能再凑出 m 个字符，直接跳出循环。"});
+        ended = true;
+        break;
+      }
+
+      var look = S[s+m];
+      var sh = shift.hasOwnProperty(look) ? shift[look] : (m + 1);
+      steps.push({line:11, s:s, j:j, shift:shift, look:look, lookAt:(s+m), shiftVal:sh,
+        desc:"<b>Sunday 的灵魂一步</b>：不看失配的那个字符，而是看窗口<b>右边紧挨着</b>的 S[" + (s+m) + "] = '" + look + "'。查偏移表它的偏移是 " + sh + "，于是把模式串整体右移 " + sh + " 格：s 从 " + s + " 变成 " + (s+sh) + "。"});
+      s += sh;
+    }
+
+    if (!ended){
+      steps.push({line:6, s:s, j:0, shift:shift, notfound:true,
+        desc:"s + m = " + (s+m) + " 已经大于 n = " + n + "，窗口越过了主串末尾，整个主串扫完都没有匹配上。"});
+    }
+    steps.push({line:13, s:s, j:0, shift:shift, notfound:true,
+      desc:"返回 \u22121，表示模式串在 S 中不存在。全程一共只比了很少几轮——这就是偏移表带来的加速。"});
+    return {steps:steps, shift:shift};
+  }
+
+  function buildSundayViz(step){
+    var S = SUN_S.split(""), T = SUN_T.split("");
+    var s = step.s, m = T.length;
+    var html = "";
+
+    html += '<div class="vizlabel">主串 S = "<b>' + SUN_S + '</b>"</div>';
+    html += '<div class="row">';
+    html += '<div class="gutter"></div>';
+    for (var k = 0; k < S.length; k++){
+      var cls = "ch";
+      if (k >= s && k < s + m) cls += " win";
+      if (step.cmp && k === s + step.j) cls += (step.cmp.eq ? " hit" : " miss");
+      if (step.lookAt === k) cls += " lb";
+      html += '<div class="cellwrap"><div class="idx">' + k + '</div><div class="' + cls + '">' + S[k] + '</div></div>';
+    }
+    html += '</div>';
+
+    html += '<div class="row" style="align-items:center;margin-top:-2px;">';
+    html += '<div class="gutter"></div>';
+    for (var p = 0; p < S.length; p++){
+      var ptr = "";
+      if (step.s === p) ptr = '<span class="pb i">s</span>';
+      if (step.lookAt === p) ptr += '<span class="pb j">?</span>';
+      html += '<div style="flex:0 0 36px;min-width:36px;display:flex;justify-content:center;gap:2px;">' + ptr + '</div>';
+    }
+    html += '</div>';
+
+    html += '<div class="vizlabel" style="margin-top:18px;">模式串 T = "<b>' + SUN_T + '</b>" 贴在 s = ' + s + ' 处</div>';
+    html += '<div class="row" style="align-items:flex-start;">';
+    html += '<div class="gutter"></div>';
+    for (var g = 0; g < s; g++){
+      html += '<div class="cellwrap" style="visibility:hidden;"><div class="idx">&nbsp;</div><div class="ch gap">&nbsp;</div></div>';
+    }
+    for (var t = 0; t < m; t++){
+      var tc = "ch";
+      if (step.cmp && t === step.j) tc += (step.cmp.eq ? " hit" : " miss");
+      html += '<div class="cellwrap"><div class="idx">' + t + '</div><div class="' + tc + '">' + T[t] + '</div></div>';
+    }
+    html += '</div>';
+
+    html += '<div class="row" style="align-items:center;margin-top:-2px;">';
+    html += '<div class="gutter"></div>';
+    for (var g2 = 0; g2 < s; g2++){ html += '<div style="flex:0 0 36px;min-width:36px;"></div>'; }
+    for (var t2 = 0; t2 < m; t2++){
+      var jp = (step.j === t2) ? '<span class="pb j">j</span>' : '';
+      html += '<div style="flex:0 0 36px;min-width:36px;display:flex;justify-content:center;">' + jp + '</div>';
+    }
+    html += '</div>';
+
+    html += '<div class="vizlabel" style="margin-top:18px;">偏移表（不在表里的字符 \u2192 跳 ' + (m + 1) + ' 格）</div>';
+    html += '<div class="nextbox">';
+    var seen = [];
+    for (var q = 0; q < m; q++){
+      if (seen.indexOf(T[q]) >= 0) continue;
+      seen.push(T[q]);
+      var nc = "ncell set";
+      if (step.look === T[q]) nc += " now";
+      html += '<div class="' + nc + '"><div class="nj">' + T[q] + '</div><div class="nv">' + (m - lastIndex(T, T[q])) + '</div></div>';
+    }
+    html += '<div class="ncell"><div class="nj">其他</div><div class="nv">' + (m + 1) + '</div></div>';
+    html += '</div>';
+
+    var cmpTxt = "\u2014";
+    if (step.cmp) cmpTxt = step.cmp.a + (step.cmp.eq ? " = " : " \u2260 ") + step.cmp.b;
+    else if (step.found !== undefined) cmpTxt = "匹配成功 @ " + step.found;
+    else if (step.look) cmpTxt = "S[" + step.lookAt + "]='" + step.look + "' \u2192 跳 " + step.shiftVal;
+
+    html += watchHtml([["s", step.s], ["j", step.j], ["n", S.length], ["结果", cmpTxt]]);
+    return html;
+  }
+
+  function lastIndex(arr, v){
+    for (var i = arr.length - 1; i >= 0; i--){ if (arr[i] === v) return i; }
+    return -1;
+  }
+
   function render(){
     var steps = currentSteps();
     var step = steps[state.idx];
     renderCode(currentCode(), step.line);
-    el.viz.innerHTML = (state.mode === "next") ? buildNextViz(step) : buildMatchViz(step);
+    if(state.mode === "next"){ el.viz.innerHTML = buildNextViz(step); }
+    else if(state.mode === "sunday"){ el.viz.innerHTML = buildSundayViz(step); }
+    else { el.viz.innerHTML = buildMatchViz(step); }
     el.explain.innerHTML = step.desc;
     el.explain.classList.remove("flash");
     void el.explain.offsetWidth;
@@ -573,7 +788,8 @@ footer{margin-top:64px;padding-top:22px;border-top:1px solid var(--line-soft);co
     stopAuto();
     state.mode = mode;
     state.idx = 0;
-    el.codeTitle.textContent = (mode === "next") ? "GenNext.c" : "Index.c";
+    el.codeTitle.textContent = (mode === "next") ? "GenNext.c" : (mode === "sunday" ? "Sunday.c" : "Index.c");
+    if(el.vizTitle){ el.vizTitle.textContent = (mode === "sunday") ? "主串 / 模式串对齐与偏移表" : "指针与 next 数组"; }
     var tabs = document.querySelectorAll(".tab");
     for(var k=0;k<tabs.length;k++){
       tabs[k].classList.toggle("on", tabs[k].getAttribute("data-mode") === mode);
